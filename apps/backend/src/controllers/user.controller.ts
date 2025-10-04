@@ -1,0 +1,154 @@
+import type { Response, Request } from "express";
+import { User, type IUser } from "../models/user.model.js";
+import { generateToken } from "../utils/generateToken.js";
+
+
+interface AuthRequest extends Request {
+  user: IUser
+}
+export const login = async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({
+        status: 400,
+        mssg: "Please provide all the requried fields",
+        user: {},
+      });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        status: 404,
+        mssg: "User not found",
+        user: {},
+      });
+    }
+    const isPassCorrect = await user.isPassCorrect(password);
+    if (!isPassCorrect) {
+      return res.status(401).json({
+        status: 401,
+        mssg: "Invalid user credentials",
+        user: {},
+      });
+    }
+    const { accessToken, refreshToken } = await generateToken(user);
+    return res
+      .status(200)
+      .cookie("accessToken", accessToken)
+      .cookie("refreshToken", refreshToken)
+      .json({
+        status: 200,
+        mssg: "User logged in successfully",
+        user: {
+          email: user.email,
+          fullName: user.fullName,
+          avatar: user.avatar,
+        },
+        // accessToken,
+        // refreshToken,
+      });
+  } catch (err) {
+    console.error("Error while logging in ", err);
+    return res.status(500).json({
+      status: 500,
+      mssg: "Internal server error",
+      user: {},
+    });
+  }
+};
+
+export const logout = async (req: AuthRequest, res: Response) => {
+  const user = await User.findByIdAndUpdate(req.user.id, {
+    $unset: {
+      refreshToken: 1,
+    },
+  }).select("-password");
+
+  return res
+    .status(200)
+    .clearCookie("accessToken")
+    .clearCookie("refreshToken")
+    .json({
+      status: 200,
+      mssg: "Logged-out successfully",
+      user: {},
+    });
+};
+
+export const register = async (req: Request, res: Response) => {
+  const { fullName, avatar, password, email } = req.body;
+  if (!fullName || !password || !email) {
+    return res.status(400).json({
+      staus: 400,
+      mssg: "Please provide all the required fields",
+      user: {},
+    });
+    const userExists = await User.findOne({ email });
+  }
+  if (avatar) {
+    // cloudinary logic
+  }
+  await User.create({
+    fullName,
+    email,
+    password,
+    avatar: avatar ?? null,
+  });
+  const user = await User.findOne({ email }).select("-password -refreshToken");
+  if (!user) {
+    return res.status(500).json({
+      staus: 500,
+      mssg: "Failed to register user",
+      user: {},
+    });
+  }
+  return res.status(201).json({
+    staus: 201,
+    mssg: "User registered successfully",
+    user,
+  });
+};
+
+export const getCurrentUser = async (req: AuthRequest, res: Response) => {
+  return res
+    .send(200)
+    .json({ status: 200, mssg: "User fetched successfully", user: req.user });
+};
+
+export const deleteUserAccn = async (req: AuthRequest, res: Response) => {
+  await User.findByIdAndDelete(req.user.id);
+  res
+    .status(200)
+    .json({ status: 200, mssg: "User deleted successfully", user: {} });
+};
+
+export const updatePassword = async (req: AuthRequest, res: Response) => {
+  const { oldPass, newPass } = req.body;
+  if (!oldPass || !newPass) {
+    return res.status(400).json({
+      status: 400,
+      mssg: "Please provide all the requried fields",
+      user: {},
+    });
+  }
+  const user = await User.findById(req.user.id);
+  if (!user) {
+    return res.status(404).json({
+      status: 404,
+      mssg: "User not found",
+      user: {},
+    });
+  }
+  const isPassCorrect = await user.isPassCorrect(oldPass);
+  if (!isPassCorrect) {
+    if (!isPassCorrect) {
+      return res
+        .status(401)
+        .json({ status: 401, mssg: "Incorrect password", user: {} });
+    }
+  }
+  user.password = newPass;
+  await user.save({ validateBeforeSave: false });
+};
