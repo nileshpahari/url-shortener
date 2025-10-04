@@ -1,11 +1,8 @@
 import type { Response, Request } from "express";
 import { User, type IUser } from "../models/user.model.js";
 import { generateToken } from "../utils/generateToken.js";
+import type { AuthRequest } from "../types/index.js";
 
-
-interface AuthRequest extends Request {
-  user: IUser
-}
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
@@ -60,7 +57,7 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const logout = async (req: AuthRequest, res: Response) => {
-  const user = await User.findByIdAndUpdate(req.user.id, {
+  const user = await User.findByIdAndUpdate(req.user._id, {
     $unset: {
       refreshToken: 1,
     },
@@ -118,7 +115,31 @@ export const getCurrentUser = async (req: AuthRequest, res: Response) => {
 };
 
 export const deleteUserAccn = async (req: AuthRequest, res: Response) => {
-  await User.findByIdAndDelete(req.user.id);
+  const { password } = req.body;
+  if (!password) {
+    return res.status(400).json({
+      status: 400,
+      mssg: "Password is required to delete the user account",
+      user: {},
+    });
+  }
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    return res.status(404).json({
+      status: 404,
+      mssg: "User not found",
+      user: {},
+    });
+  }
+  const isPassCorrect = await user.isPassCorrect(password);
+  if (!isPassCorrect) {
+    return res.status(401).json({
+      status: 401,
+      mssg: "Invalid user credentials",
+      user: {},
+    });
+  }
+  await User.findByIdAndDelete(req.user._id);
   res
     .status(200)
     .json({ status: 200, mssg: "User deleted successfully", user: {} });
@@ -133,7 +154,7 @@ export const updatePassword = async (req: AuthRequest, res: Response) => {
       user: {},
     });
   }
-  const user = await User.findById(req.user.id);
+  const user = await User.findById(req.user._id);
   if (!user) {
     return res.status(404).json({
       status: 404,
