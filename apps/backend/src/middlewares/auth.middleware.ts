@@ -18,11 +18,11 @@ export const verifyToken = async (
     if (!accessToken) {
       return res
         .status(401)
-        .json({ status: 401, user: {}, message: "Unauthorized request" });
+        .json({ status: 401, mssg: "Unauthorized request", user: {} });
     }
     const decodedAccessToken = jwt.verify(
       accessToken,
-      process.env.ACCESS_TOKEN as string
+      process.env.ACCESS_TOKEN_SECRET as string
     ) as DecodedAccessToken;
     const user = await User.findOne({ email: decodedAccessToken.email });
     if (!user) {
@@ -32,10 +32,12 @@ export const verifyToken = async (
     }
     req.user = user;
     next();
-  } catch (error) {
+  } catch (err) {
+    console.error(err);
     return res.status(401).json({
       status: 401,
       message: "Invalid or expired token",
+      user: {},
     });
   }
 };

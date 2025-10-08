@@ -8,7 +8,7 @@ router.get("/current-user", verifyToken, getCurrentUser as any);
 router.post("/login", login);
 router.post("/register", register);
 router.post("/logout", verifyToken, logout as any);
-router.post("/delete-user-account", verifyToken, deleteUserAccn as any);
-router.post("/update-password", verifyToken, updatePassword as any);
+router.delete("/delete-user", verifyToken, deleteUserAccn as any);
+router.patch("/update-password", verifyToken, updatePassword as any);
 
-export default router
+export default router 

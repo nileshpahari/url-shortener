@@ -1,12 +1,16 @@
-import mongoose from "mongoose";
+import mongoose, { Document, Schema } from "mongoose";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
-export interface IUser {
+export interface IUser extends Document {
   email: string;
   password: string;
   fullName: string;
-  avatar?: string;
-  refreshToken?: string;
+  avatar: string | null;
+  refreshToken: string | null;
+  isPassCorrect(pass: string): Promise<boolean>;
+  generateAccessToken(): string;
+  generateRefreshToken(): string;
 }
 
 const userSchema = new mongoose.Schema<IUser>(
@@ -45,5 +49,27 @@ userSchema.pre("save", async function (next) {
   }
   next();
 });
+
+userSchema.methods.isPassCorrect = async function (pass: string) {
+  return await bcrypt.compare(pass, this.password);
+};
+
+userSchema.methods.generateAccessToken = function () {
+  return jwt.sign(
+    {
+      email: this.email,
+    },
+    process.env.ACCESS_TOKEN_SECRET as string
+  );
+};
+
+userSchema.methods.generateRefreshToken = function () {
+  return jwt.sign(
+    {
+      id: this._id,
+    },
+    process.env.REFRESH_TOKEN_SECRET as string
+  );
+};
 
 export const User = mongoose.model("User", userSchema);
