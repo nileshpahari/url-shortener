@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import type { IUser } from "./user.model.js";
 
 interface Url {
   id: string;
@@ -7,6 +6,7 @@ interface Url {
   clicks: number;
   clickHistory: { timestamp: number }[];
   creator: mongoose.Schema.Types.ObjectId;
+  recordClick(): Promise<void>
 }
 
 const urlSchema = new mongoose.Schema<Url>(
@@ -36,9 +36,17 @@ const urlSchema = new mongoose.Schema<Url>(
 );
 
 urlSchema.methods.recordClick = async function () {
-  this.clicks += 1;
   this.clickHistory.push({ timestamp: Date.now() });
+  this.clicks += 1;
   await this.save();
 };
+
+urlSchema.pre("save", function (next) {
+  // normalization before saving
+  if (this.isModified("redirectURL") && !/^https?:\/\//i.test(this.redirectURL)) {
+    this.redirectURL = `https://${this.redirectURL}`;
+  }
+  next();
+});
 
 export const Url = mongoose.model("Url", urlSchema);

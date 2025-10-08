@@ -3,6 +3,11 @@ import { User, type IUser } from "../models/user.model.js";
 import { generateToken } from "../utils/generateToken.js";
 import type { AuthRequest } from "../types/index.js";
 
+const cookieConfig = {
+  httpOnly: true,
+  secure: true,
+}
+
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
@@ -41,8 +46,8 @@ export const login = async (req: Request, res: Response) => {
     const { accessToken, refreshToken } = await generateToken(user);
     return res
       .status(200)
-      .cookie("accessToken", accessToken)
-      .cookie("refreshToken", refreshToken)
+      .cookie("accessToken", accessToken, cookieConfig)
+      .cookie("refreshToken", refreshToken, cookieConfig)
       .json({
         status: 200,
         mssg: "User logged in successfully",
@@ -73,8 +78,8 @@ export const logout = async (req: AuthRequest, res: Response) => {
 
   return res
     .status(200)
-    .clearCookie("accessToken")
-    .clearCookie("refreshToken")
+    .clearCookie("accessToken", cookieConfig)
+    .clearCookie("refreshToken", cookieConfig)
     .json({
       status: 200,
       mssg: "Logged-out successfully",
@@ -122,8 +127,8 @@ export const register = async (req: Request, res: Response) => {
     const { accessToken, refreshToken } = await generateToken(user);
     return res
       .status(201)
-      .cookie("accessToken", accessToken)
-      .cookie("refreshToken", refreshToken)
+      .cookie("accessToken", accessToken, cookieConfig)
+      .cookie("refreshToken", refreshToken, cookieConfig)
       .json({
         status: 201,
         mssg: "User registered and logged in successfully",
