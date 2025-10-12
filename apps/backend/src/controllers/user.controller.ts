@@ -1,5 +1,5 @@
 import type { Response, Request } from "express";
-import { User, type IUser } from "../models/user.model.js";
+import { User } from "../models/user.model.js";
 import { generateToken } from "../utils/generateToken.js";
 import type { AuthRequest } from "../types/index.js";
 
@@ -22,7 +22,7 @@ export const login = async (req: Request, res: Response) => {
     if (typeof email !== "string" || typeof password !== "string") {
       return res.status(400).json({
         status: 400,
-        message: "Email and password must be strings",
+        mssg: "Email and password must be strings",
         user: {},
       });
     }
@@ -54,7 +54,7 @@ export const login = async (req: Request, res: Response) => {
         user: {
           email: user.email,
           fullName: user.fullName,
-          avatar: user.avatar,
+          // avatar: user.avatar,
         },
         // accessToken,
         // refreshToken,
@@ -89,7 +89,7 @@ export const logout = async (req: AuthRequest, res: Response) => {
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const { fullName, avatar, password, email } = req.body;
+    const { fullName, password, email } = req.body;
     if (!fullName || !password || !email) {
       return res.status(400).json({
         status: 400,
@@ -105,14 +105,14 @@ export const register = async (req: Request, res: Response) => {
         user: {},
       });
     }
-    if (avatar) {
+    // if (avatar) {
       // cloudinary logic
-    }
+    // }
     await User.create({
       fullName,
       email,
       password,
-      avatar: avatar ?? null,
+      // avatar: avatar ?? null,
     });
     const user = await User.findOne({ email }).select(
       "-password -refreshToken"
@@ -164,7 +164,7 @@ export const deleteUserAccn = async (req: AuthRequest, res: Response) => {
   if (typeof password !== "string") {
     return res.status(400).json({
       status: 400,
-      message: "Email and password must be strings",
+      mssg: "Email and password must be strings",
       user: {},
     });
   }
@@ -193,8 +193,8 @@ export const deleteUserAccn = async (req: AuthRequest, res: Response) => {
 
 export const updatePassword = async (req: AuthRequest, res: Response) => {
   try {
-    const { oldPass, newPass } = req.body;
-    if (!oldPass || !newPass) {
+    const { oldPassword, newPassword } = req.body;
+    if (!oldPassword || !newPassword) {
       return res.status(400).json({
         status: 400,
         mssg: "Please provide all the requried fields",
@@ -209,7 +209,7 @@ export const updatePassword = async (req: AuthRequest, res: Response) => {
         user: {},
       });
     }
-    const isPassCorrect = await user.isPassCorrect(oldPass);
+    const isPassCorrect = await user.isPassCorrect(oldPassword);
     if (!isPassCorrect) {
       if (!isPassCorrect) {
         return res
@@ -217,11 +217,11 @@ export const updatePassword = async (req: AuthRequest, res: Response) => {
           .json({ status: 401, mssg: "Incorrect password", user: {} });
       }
     }
-    user.password = newPass;
+    user.password = newPassword;
     await user.save({ validateBeforeSave: false });
     return res
       .status(200)
-      .json({ status: 401, mssg: "Password updated successfully", user: {} });
+      .json({ status: 200, mssg: "Password updated successfully", user: {} });
   } catch (err) {
     console.error(err);
     return res
