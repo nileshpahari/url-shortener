@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from "express";
+import type { Response, NextFunction } from "express";
 import jwt, { type JwtPayload } from "jsonwebtoken";
 import { User } from "../models/user.model.js";
 
@@ -14,7 +14,7 @@ export const verifyToken = async (
   try {
     const accessToken: string =
       req.cookies?.accessToken ||
-      req.header("Authorization")?.replace("Bearer", "");
+      req.header("Authorization")?.replace("Bearer ", "");
     if (!accessToken) {
       return res
         .status(401)
@@ -24,7 +24,7 @@ export const verifyToken = async (
       accessToken,
       process.env.ACCESS_TOKEN_SECRET as string
     ) as DecodedAccessToken;
-    const user = await User.findOne({ email: decodedAccessToken.email });
+    const user = await User.findOne({ email: decodedAccessToken.email }).select("-password -refreshToken");
     if (!user) {
       return res
         .status(404)
