@@ -1,35 +1,25 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { Navbar } from "./components/Navbar";
+import { Outlet } from "react-router-dom";
+import { Container } from "./components/Container";
+import { useAuth } from "./hooks/useAuth";
+import { LoaderCircle } from "lucide-react";
 
 function App() {
-  const [count, setCount] = useState(0)
-
+  const { authLoading } = useAuth();
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <Container>
+      <Navbar />
+      <main>
+        {authLoading ? (
+          <div className="z-100 min-h-screen w-full flex justify-center items-center text-white">
+            <LoaderCircle className="animate-spin "></LoaderCircle>
+          </div>
+        ) : (
+          <Outlet />
+        )}
+      </main>
+    </Container>
+  );
 }
 
-export default App
+export default App;
