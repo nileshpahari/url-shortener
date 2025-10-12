@@ -6,7 +6,7 @@ export interface IUser extends Document {
   email: string;
   password: string;
   fullName: string;
-  avatar: string | null;
+  // avatar: string | null;
   refreshToken: string | null;
   isPassCorrect(pass: string): Promise<boolean>;
   generateAccessToken(): string;
@@ -31,9 +31,9 @@ const userSchema = new mongoose.Schema<IUser>(
       required: true,
       trim: true,
     },
-    avatar: {
-      type: String,
-    },
+    // avatar: {
+    //   type: String,
+    // },
     refreshToken: {
       type: String,
     },
