@@ -1,10 +1,7 @@
 import type { Response, NextFunction } from "express";
-import jwt, { type JwtPayload } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import { User } from "../models/user.model.js";
-
-interface DecodedAccessToken extends JwtPayload {
-  email: string;
-}
+import type { DecodedAccessToken } from "../types/index.js";
 
 export const verifyToken = async (
   req: any,
@@ -24,7 +21,9 @@ export const verifyToken = async (
       accessToken,
       process.env.ACCESS_TOKEN_SECRET as string
     ) as DecodedAccessToken;
-    const user = await User.findOne({ email: decodedAccessToken.email }).select("-password -refreshToken");
+    const user = await User.findOne({ email: decodedAccessToken.email }).select(
+      "-password -refreshToken"
+    );
     if (!user) {
       return res
         .status(404)
