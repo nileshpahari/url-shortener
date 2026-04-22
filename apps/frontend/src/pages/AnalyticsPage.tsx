@@ -1,37 +1,28 @@
-"use client";
-
 import { useEffect, useMemo, useState } from "react";
 import { API_BASE_URL, BASE_URL } from "@/constants";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MousePointerClick, Clock } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import axios from "axios";
 
 interface Url {
 	id: string;
 	redirectURL: string;
 	clicks: number;
-	lastClick?: string;
+	clickHistory: { timestamp: number }[];
 }
 
 export default function AnalyticsPage() {
 	const [urls, setUrls] = useState<Url[]>([]);
 	const [query, setQuery] = useState("");
-	const [page, setPage] = useState(1);
-	const [hasMore, setHasMore] = useState(true);
 	const [loading, setLoading] = useState(false);
 
-	const fetchUrls = async (pageNumber: number) => {
+	const fetchUrls = async () => {
 		setLoading(true);
 		try {
-
 			const res = await axios.get(`${API_BASE_URL}/url/all`);
-			const data = res.data.urls;
-			setUrls(data)
-			// setHasMore(res.data.hasMore);
-
-
+			const data = res.data.urls as Url[];
+			setUrls(data);
 		} catch (error) {
 			console.error(error);
 		} finally {
@@ -40,7 +31,7 @@ export default function AnalyticsPage() {
 	};
 
 	useEffect(() => {
-		fetchUrls(1);
+		fetchUrls();
 	}, []);
 
 	const filtered = useMemo(() => {
@@ -53,17 +44,16 @@ export default function AnalyticsPage() {
 		);
 	}, [urls, query]);
 
-	const loadMore = () => {
-		const nextPage = page + 1;
-		setPage(nextPage);
-		fetchUrls(nextPage);
-	};
-
 	const shorten = (url: string) =>
 		url.length > 50 ? url.slice(0, 50) + "..." : url;
 
+	const getLastClick = (clickHistory: { timestamp: number }[]) => {
+		if (!clickHistory?.length) return null;
+		return clickHistory[clickHistory.length - 1]?.timestamp ?? null;
+	};
+
 	return (
-		<div className="w-full min-h-screen bg-gray px-4 py-10 justify-center items-center flex rounded ">
+		<div className="w-full min-h-screen bg-gray px-4 py-10 justify-center items-center flex rounded">
 			<div className="w-6xl mx-auto flex flex-col gap-6 z-100 bg-white relative p-6 rounded-lg">
 				<h1 className="text-2xl font-bold text-gray-800">Analytics</h1>
 
@@ -88,6 +78,17 @@ export default function AnalyticsPage() {
 						</TableHeader>
 
 						<TableBody>
+							{loading && (
+								<TableRow>
+									<TableCell
+										colSpan={4}
+										className="text-center text-gray-400 text-sm py-6"
+									>
+										Loading...
+									</TableCell>
+								</TableRow>
+							)}
+
 							{filtered.map((url) => (
 								<TableRow key={url.id} className="hover:bg-gray-50 transition">
 									<TableCell className="font-mono">
@@ -122,8 +123,8 @@ export default function AnalyticsPage() {
 									<TableCell className="text-right text-gray-500 text-sm">
 										<div className="flex justify-end items-center gap-1">
 											<Clock size={14} className="text-gray-400" />
-											{url.lastClick
-												? new Date(url.lastClick).toLocaleString()
+											{getLastClick(url.clickHistory)
+												? new Date(getLastClick(url.clickHistory) as number).toLocaleString()
 												: "—"}
 										</div>
 									</TableCell>
@@ -136,25 +137,13 @@ export default function AnalyticsPage() {
 										colSpan={4}
 										className="text-center text-gray-400 text-sm py-6"
 									>
-										No links found.
+										{loading ? "" : "No links found."}
 									</TableCell>
 								</TableRow>
 							)}
 						</TableBody>
 					</Table>
 				</div>
-
-				{hasMore && (
-					<div className="flex justify-center mt-4">
-						<Button
-							onClick={loadMore}
-							disabled={loading}
-							className="w-40 bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50"
-						>
-							{loading ? "Loading..." : "Load More"}
-						</Button>
-					</div>
-				)}
 			</div>
 		</div>
 	);
